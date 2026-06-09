@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Settings, BarChart3 } from 'lucide-react';
 import UserSwitcher from './UserSwitcher';
+import ProviderSwitcher from './ProviderSwitcher';
 import SettingsPanel from './SettingsPanel';
 import ChatView from './ChatView';
 
@@ -24,6 +25,7 @@ export default function AppShell() {
           </span>
         </div>
         <div className="flex items-center gap-3">
+          <ProviderSwitcher />
           <UserSwitcher />
           <button
             onClick={() => setSettingsOpen(true)}

@@ -2,6 +2,7 @@
 
 import { UserPreferences } from '@/types/preferences';
 import { DashboardSpec } from '@/types/componentSpec';
+import type { Provider } from '@/lib/llm/types';
 
 export interface ConversationMessage {
   role: 'user' | 'assistant';
@@ -18,11 +19,12 @@ export async function sendMessage(
   messages: ConversationMessage[],
   userId: string,
   preferences: UserPreferences,
+  provider: Provider,
 ): Promise<AgentResult> {
   const res = await fetch('/api/agent', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages, userId, preferences }),
+    body: JSON.stringify({ messages, userId, preferences, provider }),
   });
   if (!res.ok) {
     const { error } = await res.json();

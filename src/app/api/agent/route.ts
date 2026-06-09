@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
 import { UserPreferences } from '@/types/preferences';
-
-const client = new Anthropic();
+import { getAdapter, Provider } from '@/lib/llm';
 
 function buildSystemPrompt(prefs: UserPreferences): string {
   return `You are a data visualization agent for a2ui. You create multi-chart dashboards from data and update user preferences based on conversational requests.
@@ -59,14 +57,14 @@ Current user preferences (apply to all generated charts):
 }
 
 export async function POST(req: NextRequest) {
-  let body: { messages?: unknown; userId?: unknown; preferences?: unknown };
+  let body: { messages?: unknown; userId?: unknown; preferences?: unknown; provider?: unknown };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { messages, userId, preferences } = body;
+  const { messages, userId, preferences, provider = 'anthropic' } = body;
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return NextResponse.json({ error: 'messages array is required' }, { status: 400 });
@@ -79,20 +77,11 @@ export async function POST(req: NextRequest) {
   }
 
   const prefs = preferences as UserPreferences;
-  const apiMessages = messages as { role: 'user' | 'assistant'; content: string }[];
+  const llmMessages = messages as { role: 'user' | 'assistant'; content: string }[];
 
   try {
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
-      system: buildSystemPrompt(prefs),
-      messages: apiMessages,
-    });
-
-    const text = response.content
-      .filter((b) => b.type === 'text')
-      .map((b) => (b as { type: 'text'; text: string }).text)
-      .join('');
+    const adapter = getAdapter(provider as Provider);
+    const text = await adapter.complete(llmMessages, buildSystemPrompt(prefs));
 
     let parsed: {
       dashboard?: unknown;
@@ -106,18 +95,17 @@ export async function POST(req: NextRequest) {
         parsed = JSON.parse(jsonMatch[0]);
       }
     } catch {
-      // non-JSON response
+      // non-JSON response — surface as message
     }
 
     if (!parsed) {
-      return NextResponse.json({ message: text, rawText: text });
+      return NextResponse.json({ message: text });
     }
 
     return NextResponse.json({
       dashboard: parsed.dashboard ?? null,
       preferenceUpdates: parsed.preferenceUpdates ?? null,
       message: parsed.message ?? null,
-      rawJson: text,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Internal error';

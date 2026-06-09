@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { UserProvider } from '@/contexts/UserContext';
 import { PreferenceProvider } from '@/contexts/PreferenceContext';
+import { ProviderProvider } from '@/contexts/ProviderContext';
 
 export const metadata: Metadata = {
   title: 'a2ui — Personalized UI Demo',
@@ -12,11 +13,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <UserProvider>
-          <PreferenceProvider>
-            {children}
-          </PreferenceProvider>
-        </UserProvider>
+        <ProviderProvider>
+          <UserProvider>
+            <PreferenceProvider>
+              {children}
+            </PreferenceProvider>
+          </UserProvider>
+        </ProviderProvider>
       </body>
     </html>
   );

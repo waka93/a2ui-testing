@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Paperclip, X, Sparkles } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePreferences } from '@/contexts/PreferenceContext';
+import { useProvider } from '@/contexts/ProviderContext';
 import { sendMessage, ConversationMessage } from '@/lib/agentService';
 import DashboardView from './DashboardView';
 import { DashboardSpec } from '@/types/componentSpec';
@@ -47,6 +48,7 @@ const HINTS = [
 export default function ChatView() {
   const { userId } = useUser();
   const { preferences, updatePref } = usePreferences();
+  const { provider } = useProvider();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [history, setHistory] = useState<ConversationMessage[]>([]);
   const [input, setInput] = useState('');
@@ -104,7 +106,7 @@ export default function ChatView() {
     const newHistory: ConversationMessage[] = [...history, { role: 'user', content: agentContent }];
 
     try {
-      const result = await sendMessage(newHistory, userId, preferences);
+      const result = await sendMessage(newHistory, userId, preferences, provider);
 
       if (result.preferenceUpdates) {
         for (const [key, value] of Object.entries(result.preferenceUpdates)) {
